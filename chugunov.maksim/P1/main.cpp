@@ -1,13 +1,18 @@
 #include <iostream>
+#include <limits>
 
 namespace chugunov {
 
-  bool readNum(int &x)
+  const int IN_ERR = 1;
+  const int CALC_ERR = 2;
+
+  bool incCounter(int &counter)
   {
-    if (std::cin >> x) {
-      return true;
+    if (counter == std::numeric_limits< int >::max()) {
+      return false;
     }
-    return false;
+    ++counter;
+    return true;
   }
 
 }
@@ -21,17 +26,9 @@ int main()
   bool have_max1 = false;
   bool have_max2 = false;
   int div_count = 0;
+  bool div_overflow = false;
 
-  while (true) {
-    if (!chugunov::readNum(x)) {
-      std::cerr << "not a seq" << std::endl;
-      return 1;
-    }
-
-    if (x == 0) {
-      break;
-    }
-
+  while (std::cin >> x && x != 0) {
     if (!have_max1) {
       max1 = x;
       have_max1 = true;
@@ -42,29 +39,32 @@ int main()
     } else if (x == max1) {
       max2 = x;
       have_max2 = true;
-    } else {
-      if (!have_max2 || x > max2) {
-        max2 = x;
-        have_max2 = true;
-      }
+    } else if (!have_max2 || x > max2) {
+      max2 = x;
+      have_max2 = true;
     }
 
-    if (count > 0) {
-      if (x % prev == 0) {
-        div_count = div_count + 1;
+    if (count > 0 && (prev == -1 || x % prev == 0)) {
+      if (!chugunov::incCounter(div_count)) {
+        div_overflow = true;
       }
     }
 
     prev = x;
-    count = count + 1;
+    if (count < 2) {
+      count = count + 1;
+    }
   }
 
-  char c = 0;
-  while (std::cin.get(c)) {
-    if (c != ' ' && c != '\n' && c != '\t' && c != '\r') {
-      std::cerr << "not a seq" << std::endl;
-      return 1;
-    }
+  if (std::cin.fail()) {
+    std::cerr << "not a seq" << std::endl;
+    return chugunov::IN_ERR;
+  }
+
+  std::cin >> x;
+  if (!std::cin.fail() || !std::cin.eof()) {
+    std::cerr << "not a seq" << std::endl;
+    return chugunov::IN_ERR;
   }
 
   int code = 0;
@@ -72,14 +72,17 @@ int main()
     std::cout << max2 << std::endl;
   } else {
     std::cerr << "cant find second max" << std::endl;
-    code = 2;
+    code = chugunov::CALC_ERR;
   }
 
-  if (count >= 2) {
-    std::cout << div_count << std::endl;
-  } else {
+  if (count < 2) {
     std::cerr << "cant count divs" << std::endl;
-    code = 2;
+    code = chugunov::CALC_ERR;
+  } else if (div_overflow) {
+    std::cerr << "div count oveflow" << std::endl;
+    code = chugunov::CALC_ERR;
+  } else {
+    std::cout << div_count << std::endl;
   }
 
   return code;
